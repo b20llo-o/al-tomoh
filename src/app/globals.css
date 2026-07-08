@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: var(--font-playfair), var(--font-amiri), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), var(--font-cairo), "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* Arabic-first stacks when the document is in Arabic */
+html[lang="ar"] {
+  --font-display: var(--font-amiri), var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-cairo), var(--font-inter), "Segoe UI", system-ui, sans-serif;
+}
+
+html[dir="rtl"] .force-ltr {
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* Letter-spacing breaks Arabic letter joining — neutralize it site-wide in Arabic. */
+html[lang="ar"] body,
+html[lang="ar"] body * {
+  letter-spacing: 0 !important;
+}
+
+/* Fluid, luxurious theme transition (fallback when View Transitions absent) */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.3s ease,
+    fill 0.3s ease,
+    box-shadow 0.45s ease !important;
+}
+
+/* View Transitions circular theme reveal: the incoming theme wipes over the
+   outgoing one, which stays put underneath — a clean, premium sweep. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2147483646;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+
+  .animate-page,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none !important;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-parchment-50 text-navy-950 antialiased dark:bg-ink-950 dark:text-parchment-100;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  ::selection {
+    @apply bg-brand-500/25 text-navy-950 dark:text-parchment-50;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .heading-display {
+    @apply font-display font-semibold tracking-tight text-navy-950 dark:text-parchment-50;
+  }
+
+  .text-muted {
+    @apply text-navy-900/60 dark:text-parchment-100/60;
+  }
+
+  .card-surface {
+    @apply rounded-2xl border border-navy-900/10 bg-white shadow-card transition-all duration-300 dark:border-parchment-100/10 dark:bg-ink-900 dark:shadow-card-dark;
+  }
+
+  .card-surface-hover {
+    @apply card-surface hover:-translate-y-1 hover:shadow-card-hover hover:border-brand-500/40;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-500 text-white shadow-sm hover:bg-brand-600 hover:shadow-md active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply btn bg-navy-900 text-parchment-50 hover:bg-navy-950 active:scale-[0.98] dark:bg-parchment-100 dark:text-navy-950 dark:hover:bg-white;
+  }
+
+  .btn-outline {
+    @apply btn border border-navy-900/20 bg-transparent text-navy-950 hover:border-brand-500 hover:text-brand-600 dark:border-parchment-100/20 dark:text-parchment-100 dark:hover:border-brand-400 dark:hover:text-brand-400;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-navy-900/70 hover:bg-navy-900/5 hover:text-navy-950 dark:text-parchment-100/70 dark:hover:bg-parchment-100/10 dark:hover:text-parchment-50;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-navy-900/15 bg-white px-4 py-2.5 text-sm text-navy-950 placeholder:text-navy-900/40 transition-colors duration-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-parchment-100/15 dark:bg-ink-900 dark:text-parchment-50 dark:placeholder:text-parchment-100/40;
+  }
+
+  .label-field {
+    @apply mb-1.5 block text-sm font-medium text-navy-900 dark:text-parchment-100;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .section-eyebrow {
+    @apply mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400;
+  }
+}
+
+@layer utilities {
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+}
+
+/* Print styles for invoices */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: #141c40 !important;
+  }
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
