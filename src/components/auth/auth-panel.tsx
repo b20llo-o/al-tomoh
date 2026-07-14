@@ -2,12 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { KeyRound, LogIn, Mail, UserPlus } from "lucide-react";
+import { KeyRound, LogIn, Mail, ShieldCheck, UserPlus } from "lucide-react";
 import { useLocale } from "@/components/providers/locale-provider";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-type Mode = "login" | "register" | "recover";
+type Mode = "login" | "register" | "recover" | "confirm";
 
 export function AuthPanel() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export function AuthPanel() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [code, setCode] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,26 +32,38 @@ export function AuthPanel() {
 
   function friendlyError(message: string): string {
     if (/invalid login credentials/i.test(message)) return t("auth.badCredentials");
-    if (/already registered/i.test(message)) return t("auth.alreadyRegistered");
-    // Supabase's built-in email sender is rate limited (a few messages per
-    // hour). A 429 / "rate limit" here means confirmation emails are throttled,
-    // not that anything the user did is wrong.
+    if (/already registered|already exists|user_already_exists/i.test(message))
+      return t("auth.alreadyRegistered");
+    // A wrong / expired confirmation code.
+    if (/otp|token has expired|invalid.*token|expired|code/i.test(message))
+      return t("auth.badCode");
     if (/rate limit|too many requests|429/i.test(message)) return t("auth.rateLimited");
     // Supabase can surface a raw, unhelpful body (e.g. "{}") when the Auth
-    // server itself fails before producing a real error — most commonly when
-    // Custom SMTP is enabled but misconfigured, so the confirmation email
-    // can't be sent and signUp/reset requests fail with an empty 500 body.
-    // Never show that kind of technical noise to the user.
+    // server itself fails before producing a real error. Never show that noise.
     const looksUnhelpful = !message || !/[a-zA-Z؀-ۿ]{3,}/.test(message);
     if (looksUnhelpful) return t("common.error");
     return message;
   }
 
+  /** True for the empty/opaque 500 body Supabase returns on an email-send hiccup. */
+  function isOpaque(message: string): boolean {
+    return !message || !/[a-zA-Z؀-ۿ]{3,}/.test(message);
+  }
+
+  function resetMessages() {
+    setError(null);
+    setNotice(null);
+  }
+
+  function goLoggedIn() {
+    router.push(nextPath);
+    router.refresh();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError(null);
-    setNotice(null);
+    resetMessages();
     const supabase = createClient();
 
     try {
@@ -61,35 +74,45 @@ export function AuthPanel() {
           return;
         }
         if (!rememberMe) {
-          // Session cookies persist by default; drop the session when the tab closes.
           window.addEventListener("beforeunload", () => {
             void supabase.auth.signOut();
           });
         }
-        router.push(nextPath);
-        router.refresh();
+        goLoggedIn();
       } else if (mode === "register") {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { full_name: fullName },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
+          options: { data: { full_name: fullName } },
         });
+        // Email confirmation OFF → we get a live session, sign in immediately.
+        if (data?.session) {
+          goLoggedIn();
+          return;
+        }
         if (error) {
-          setError(friendlyError(error.message));
+          // "Already registered" / rate limit → surface as-is and stay.
+          if (!isOpaque(error.message)) {
+            setError(friendlyError(error.message));
+            return;
+          }
+          // Opaque 500: the account + code email are usually still created, so
+          // move on to code entry rather than dead-ending the user.
+        }
+        // Email confirmation ON → ask for the 6-digit code.
+        setMode("confirm");
+        setNotice(t("auth.checkSpam"));
+      } else if (mode === "confirm") {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email,
+          token: code.trim(),
+          type: "signup",
+        });
+        if (error || !data?.session) {
+          setError(friendlyError(error?.message ?? "otp"));
           return;
         }
-        // When email confirmation is turned OFF in Supabase, signUp returns a
-        // live session — sign the customer straight in. When it is ON, there is
-        // no session yet and we ask them to confirm via email.
-        if (data.session) {
-          router.push(nextPath);
-          router.refresh();
-          return;
-        }
-        setNotice(t("auth.registered"));
+        goLoggedIn();
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
@@ -105,6 +128,100 @@ export function AuthPanel() {
     }
   }
 
+  async function resendCode() {
+    setBusy(true);
+    resetMessages();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) {
+        setError(friendlyError(error.message));
+        return;
+      }
+      setNotice(t("auth.codeResent"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ── Confirmation-code screen ──────────────────────────────────────────
+  if (mode === "confirm") {
+    return (
+      <div className="card-surface p-8">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400">
+            <ShieldCheck className="h-7 w-7" strokeWidth={1.75} />
+          </span>
+          <h1 className="font-display text-xl font-semibold text-navy-950 dark:text-parchment-50">
+            {t("auth.confirmTitle")}
+          </h1>
+          <p className="mt-1.5 text-sm text-muted">{t("auth.confirmDesc")}</p>
+          <p className="force-ltr mt-1 text-sm font-medium text-navy-900 dark:text-parchment-100">
+            {email}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="auth-code" className="label-field">
+              {t("auth.codeLabel")}
+            </label>
+            <input
+              id="auth-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              required
+              className="input-field force-ltr text-center text-lg tracking-[0.5em]"
+              placeholder="••••••"
+            />
+          </div>
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+              {error}
+            </p>
+          )}
+          {notice && (
+            <p role="status" className="rounded-xl bg-brand-500/10 px-4 py-3 text-sm text-brand-700 dark:text-brand-400">
+              {notice}
+            </p>
+          )}
+
+          <button type="submit" disabled={busy || code.length < 6} className="btn-primary w-full py-3">
+            <ShieldCheck className="h-4 w-4" strokeWidth={1.75} />
+            {busy ? t("auth.verifying") : t("auth.verify")}
+          </button>
+        </form>
+
+        <div className="mt-5 flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={resendCode}
+            disabled={busy}
+            className="font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50 dark:text-brand-400"
+          >
+            {t("auth.resendCode")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("register");
+              setCode("");
+              resetMessages();
+            }}
+            className="font-medium text-muted transition-colors hover:text-brand-600 dark:hover:text-brand-400"
+          >
+            {t("auth.changeEmail")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card-surface p-8">
       {mode !== "recover" ? (
@@ -115,8 +232,7 @@ export function AuthPanel() {
               type="button"
               onClick={() => {
                 setMode(tab.mode);
-                setError(null);
-                setNotice(null);
+                resetMessages();
               }}
               className={cn(
                 "flex-1 rounded-lg py-2 text-sm font-medium transition-all duration-300",
@@ -206,8 +322,7 @@ export function AuthPanel() {
               type="button"
               onClick={() => {
                 setMode("recover");
-                setError(null);
-                setNotice(null);
+                resetMessages();
               }}
               className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
             >
@@ -243,7 +358,10 @@ export function AuthPanel() {
         {mode === "recover" && (
           <button
             type="button"
-            onClick={() => setMode("login")}
+            onClick={() => {
+              setMode("login");
+              resetMessages();
+            }}
             className="flex w-full items-center justify-center gap-2 text-sm font-medium text-muted transition-colors hover:text-brand-600 dark:hover:text-brand-400"
           >
             <KeyRound className="h-4 w-4" strokeWidth={1.75} />
