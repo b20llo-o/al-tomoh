@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   BadgeCheck,
@@ -23,7 +24,21 @@ import { categoryName, categoryDescription } from "@/lib/localize";
 
 const WHY_ICONS = [BadgeCheck, Truck, Gift, HeadphonesIcon];
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string; next?: string; error?: string }>;
+}) {
+  // Supabase's "Site URL" redirect lands auth codes on the homepage (e.g.
+  // /?code=...). Forward those to the callback handler so login completes
+  // even if the dashboard Site URL isn't pointed at /auth/callback.
+  const sp = await searchParams;
+  if (sp.code) {
+    const params = new URLSearchParams({ code: sp.code });
+    if (sp.next) params.set("next", sp.next);
+    redirect(`/auth/callback?${params.toString()}`);
+  }
+
   const { locale, t } = await getLocaleT();
 
   const [featured, newArrivals, bestsellers, categories, testimonials, homepage] =
