@@ -32,6 +32,10 @@ export function AuthPanel() {
   function friendlyError(message: string): string {
     if (/invalid login credentials/i.test(message)) return t("auth.badCredentials");
     if (/already registered/i.test(message)) return t("auth.alreadyRegistered");
+    // Supabase's built-in email sender is rate limited (a few messages per
+    // hour). A 429 / "rate limit" here means confirmation emails are throttled,
+    // not that anything the user did is wrong.
+    if (/rate limit|too many requests|429/i.test(message)) return t("auth.rateLimited");
     // Supabase can surface a raw, unhelpful body (e.g. "{}") when the Auth
     // server itself fails before producing a real error — most commonly when
     // Custom SMTP is enabled but misconfigured, so the confirmation email
