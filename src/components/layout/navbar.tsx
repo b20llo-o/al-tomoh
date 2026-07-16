@@ -91,7 +91,7 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
+                      "relative whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
                       active
                         ? "text-brand-600 dark:text-brand-400"
                         : "text-navy-900/70 hover:text-navy-950 dark:text-parchment-100/70 dark:hover:text-parchment-50"
