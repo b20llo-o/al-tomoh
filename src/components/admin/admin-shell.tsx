@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  BarChart3,
   BookMarked,
   ExternalLink,
   FileText,
@@ -14,7 +13,6 @@ import {
   Menu,
   ScrollText,
   Settings,
-  ShoppingCart,
   Users,
   X,
 } from "lucide-react";
@@ -31,11 +29,9 @@ const NAV: { href: string; key: MessageKey; icon: typeof LayoutDashboard; exact?
   { href: ADMIN_PATH, key: "adm.dashboard", icon: LayoutDashboard, exact: true },
   { href: `${ADMIN_PATH}/books`, key: "adm.books", icon: BookMarked },
   { href: `${ADMIN_PATH}/categories`, key: "adm.categories", icon: FolderTree },
-  { href: `${ADMIN_PATH}/orders`, key: "adm.orders", icon: ShoppingCart },
   { href: `${ADMIN_PATH}/customers`, key: "adm.customers", icon: Users },
   { href: `${ADMIN_PATH}/content`, key: "adm.content", icon: FileText },
   { href: `${ADMIN_PATH}/settings`, key: "adm.settings", icon: Settings },
-  { href: `${ADMIN_PATH}/analytics`, key: "adm.analytics", icon: BarChart3 },
   { href: `${ADMIN_PATH}/logs`, key: "adm.logs", icon: ScrollText },
 ];
 
@@ -59,13 +55,12 @@ export function AdminShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-parchment-100/50 dark:bg-ink-950">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-parchment-100/50 dark:bg-ink-950">
+      {/* Sidebar — ALWAYS fixed to the viewport: it never scrolls with the page.
+          On mobile it slides in/out; on desktop it stays pinned (lg:!translate-x-0). */}
       <aside
         className={cn(
-          // On desktop the sidebar is always visible (lg:!translate-x-0 wins over
-          // the RTL mobile transform below). On mobile it slides in/out.
-          "fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e border-navy-900/10 bg-white transition-transform duration-300 dark:border-parchment-100/10 dark:bg-ink-900 lg:static lg:!translate-x-0",
+          "fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e border-navy-900/10 bg-white transition-transform duration-300 dark:border-parchment-100/10 dark:bg-ink-900 lg:!translate-x-0",
           open ? "translate-x-0" : "-translate-x-full rtl:translate-x-full"
         )}
       >
@@ -138,8 +133,8 @@ export function AdminShell({
         />
       )}
 
-      {/* Main */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Main — offset by the fixed sidebar width on desktop */}
+      <div className="flex min-h-screen min-w-0 flex-col lg:ps-64">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-navy-900/10 bg-white/90 px-4 backdrop-blur-md dark:border-parchment-100/10 dark:bg-ink-900/90 sm:px-6">
           <button
             type="button"

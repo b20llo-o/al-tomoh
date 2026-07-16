@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // The hidden host console is never indexed.
-      disallow: [`${ADMIN_PATH}`, "/account", "/checkout"],
+      disallow: [`${ADMIN_PATH}`, "/account"],
     },
   };
 }

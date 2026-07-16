@@ -6,7 +6,8 @@ import { BookActions } from "@/components/store/book-actions";
 import { BookGrid } from "@/components/store/book-grid";
 import { Price } from "@/components/store/price";
 import { SectionHeading } from "@/components/store/section-heading";
-import { getBookBySlug, getVisibleBooks } from "@/lib/data";
+import { WhatsAppOrderButton } from "@/components/store/whatsapp-order-button";
+import { getBookBySlug, getSiteContent, getVisibleBooks } from "@/lib/data";
 import { getLocaleT } from "@/lib/locale-server";
 import {
   bookAuthor,
@@ -26,6 +27,8 @@ export default async function BookPage({
   const { locale, t } = await getLocaleT();
   const book = await getBookBySlug(decodeURIComponent(slug));
   if (!book) notFound();
+
+  const contact = await getSiteContent("contact_info", locale);
 
   const title = bookTitle(book, locale);
   const author = bookAuthor(book, locale);
@@ -127,8 +130,14 @@ export default async function BookPage({
             <p className="mt-1 text-xs text-muted">{t("book.currencyNote")}</p>
           </div>
 
-          <div className="mt-7">
+          <div className="mt-7 space-y-3">
             <BookActions book={book} />
+            {book.stock > 0 && contact.whatsapp && (
+              <div>
+                <WhatsAppOrderButton book={book} number={contact.whatsapp} className="w-full sm:w-auto" />
+                <p className="mt-2 text-xs text-muted">{t("wa.note")}</p>
+              </div>
+            )}
           </div>
 
           {/* Description — back in its place, under the Add to cart button */}

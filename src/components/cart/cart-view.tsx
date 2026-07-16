@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { Minus, MessageCircle, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { useCurrency } from "@/components/providers/currency-provider";
 import { useLocale } from "@/components/providers/locale-provider";
@@ -11,9 +11,10 @@ import { EmptyState } from "@/components/store/empty-state";
 import { fetchCartBooks } from "@/lib/cart-books";
 import { formatPrice } from "@/lib/currency";
 import { bookAuthor, bookTitle } from "@/lib/localize";
+import { orderCartMessage, waLink } from "@/lib/whatsapp";
 import type { Book } from "@/lib/types";
 
-export function CartView() {
+export function CartView({ whatsapp }: { whatsapp: string }) {
   const { lines, setQuantity, removeItem, isReady } = useCart();
   const { priceOf, amountOf, currency } = useCurrency();
   const { t, locale } = useLocale();
@@ -53,6 +54,21 @@ export function CartView() {
     (sum, { line, book }) => sum + amountOf(book) * line.quantity,
     0
   );
+
+  const waHref = useMemo(() => {
+    const message = orderCartMessage(
+      enriched.map(({ line, book }) => ({
+        title: bookTitle(book, locale),
+        author: bookAuthor(book, locale),
+        quantity: line.quantity,
+        price: priceOf(book),
+      })),
+      formatPrice(subtotal, currency),
+      locale
+    );
+    return waLink(whatsapp, message);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enriched, subtotal, currency, locale, whatsapp]);
 
   if (!isReady || loading) {
     return <p className="text-sm text-muted">{t("cart.loading")}</p>;
@@ -151,10 +167,16 @@ export function CartView() {
             </div>
           </dl>
           <div className="my-5 h-px bg-navy-900/10 dark:bg-parchment-100/10" />
-          <Link href="/checkout" className="btn-primary w-full py-3">
-            <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
-            {t("cart.checkout")}
-          </Link>
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3 font-semibold text-white shadow-sm transition-all duration-300 hover:bg-[#1eb856] hover:shadow-md active:scale-[0.98]"
+          >
+            <MessageCircle className="h-4 w-4" strokeWidth={2} />
+            {t("wa.orderCart")}
+          </a>
+          <p className="mt-3 text-center text-xs text-muted">{t("wa.cartNote")}</p>
           <Link
             href="/categories"
             className="mt-3 block text-center text-sm font-medium text-muted hover:text-brand-600 dark:hover:text-brand-400"

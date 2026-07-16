@@ -10,6 +10,7 @@ const AR_CONTENT: SiteContentMap = {
   contact_info: {
     email: "hello@altomoh.com",
     phone: "+90 212 000 00 00",
+    whatsapp: "905551234567",
     address: "جادة الاستقلال رقم 1، بي أوغلو، إسطنبول، تركيا",
     map_embed_url:
       "https://www.openstreetmap.org/export/embed.html?bbox=28.9700%2C41.0300%2C28.9900%2C41.0400&layer=mapnik",
@@ -90,6 +91,7 @@ const EN_CONTENT: SiteContentMap = {
   contact_info: {
     email: "hello@altomoh.com",
     phone: "+90 212 000 00 00",
+    whatsapp: "905551234567",
     address: "Istiklal Avenue No. 1, Beyoglu, Istanbul, Türkiye",
     map_embed_url:
       "https://www.openstreetmap.org/export/embed.html?bbox=28.9700%2C41.0300%2C28.9900%2C41.0400&layer=mapnik",

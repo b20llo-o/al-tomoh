@@ -2,6 +2,15 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Book, Category, Order, OrderItem, Profile } from "@/lib/types";
 
+interface DashboardBook {
+  id: string;
+  title: string;
+  author: string | null;
+  stock: number;
+  slug: string;
+  created_at: string;
+}
+
 /** Confirms the current session belongs to a non-suspended admin. */
 export async function assertAdmin(): Promise<boolean> {
   try {
@@ -22,67 +31,51 @@ export async function assertAdmin(): Promise<boolean> {
 }
 
 export interface DashboardStats {
-  revenue: number;
-  orderCount: number;
-  pendingOrders: number;
   customerCount: number;
   bookCount: number;
+  categoryCount: number;
   lowStockCount: number;
-  recentOrders: (Order & { order_items: OrderItem[] })[];
-  bestSellers: { title: string; author: string | null; sold: number }[];
+  lowStockBooks: DashboardBook[];
+  recentBooks: DashboardBook[];
 }
 
+/**
+ * Ordering happens over WhatsApp, so the dashboard is catalogue-focused: it
+ * surfaces what the bookseller actually manages here — stock to replenish and
+ * recently added titles — rather than order/revenue figures.
+ */
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
 
-  const [ordersRes, paidRes, customersRes, booksRes, itemsRes] = await Promise.all([
-    supabase.from("orders").select("id, status", { count: "exact" }),
-    supabase.from("orders").select("total, currency, exchange_rate").eq("payment_status", "paid"),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer"),
-    supabase.from("books").select("id, stock", { count: "exact" }).eq("is_deleted", false),
-    supabase.from("order_items").select("title, author, quantity"),
-  ]);
+  const [customersRes, booksRes, categoriesRes, stockRes, recentRes] =
+    await Promise.all([
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer"),
+      supabase.from("books").select("id", { count: "exact", head: true }).eq("is_deleted", false),
+      supabase.from("categories").select("id", { count: "exact", head: true }),
+      supabase
+        .from("books")
+        .select("id, title, author, stock, slug, created_at")
+        .eq("is_deleted", false)
+        .lte("stock", 3)
+        .order("stock", { ascending: true })
+        .limit(8),
+      supabase
+        .from("books")
+        .select("id, title, author, stock, slug, created_at")
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(6),
+    ]);
 
-  // Revenue is normalized to TRY so mixed-currency orders total consistently.
-  const revenue = (paidRes.data ?? []).reduce((sum, o) => {
-    const inTry = o.currency === "USD" ? o.total * (o.exchange_rate || 1) : o.total;
-    return sum + inTry;
-  }, 0);
-
-  const pendingOrders = (ordersRes.data ?? []).filter(
-    (o) => o.status === "pending" || o.status === "processing"
-  ).length;
-
-  const lowStockCount = (booksRes.data ?? []).filter((b) => b.stock <= 3).length;
-
-  const soldMap = new Map<string, { title: string; author: string | null; sold: number }>();
-  for (const item of itemsRes.data ?? []) {
-    const existing = soldMap.get(item.title);
-    if (existing) {
-      existing.sold += item.quantity;
-    } else {
-      soldMap.set(item.title, { title: item.title, author: item.author, sold: item.quantity });
-    }
-  }
-  const bestSellers = Array.from(soldMap.values())
-    .sort((a, b) => b.sold - a.sold)
-    .slice(0, 5);
-
-  const { data: recent } = await supabase
-    .from("orders")
-    .select("*, order_items(id, quantity)")
-    .order("created_at", { ascending: false })
-    .limit(6);
+  const lowStockBooks = (stockRes.data as DashboardBook[]) ?? [];
 
   return {
-    revenue,
-    orderCount: ordersRes.count ?? 0,
-    pendingOrders,
     customerCount: customersRes.count ?? 0,
     bookCount: booksRes.count ?? 0,
-    lowStockCount,
-    recentOrders: (recent as (Order & { order_items: OrderItem[] })[]) ?? [],
-    bestSellers,
+    categoryCount: categoriesRes.count ?? 0,
+    lowStockCount: lowStockBooks.length,
+    lowStockBooks,
+    recentBooks: (recentRes.data as DashboardBook[]) ?? [],
   };
 }
 

@@ -167,6 +167,24 @@ function ContactEditor({ initial }: { initial: Bi<SiteContentMap["contact_info"]
     >
       <BiField label="البريد الإلكتروني — Email" ar={ar.email} en={en.email} onAr={(v) => setAr({ ...ar, email: v })} onEn={(v) => setEn({ ...en, email: v })} />
       <BiField label="الهاتف — Phone" ar={ar.phone} en={en.phone} onAr={(v) => setAr({ ...ar, phone: v })} onEn={(v) => setEn({ ...en, phone: v })} />
+      {/* WhatsApp is a single number (not per-language): keep AR and EN in sync. */}
+      <label className="block">
+        <span className="label-field">
+          رقم واتساب — WhatsApp number{" "}
+          <span className="font-normal text-muted">(بصيغة دولية بلا + مثل 905551234567)</span>
+        </span>
+        <input
+          dir="ltr"
+          value={ar.whatsapp}
+          onChange={(e) => {
+            const v = e.target.value;
+            setAr({ ...ar, whatsapp: v });
+            setEn({ ...en, whatsapp: v });
+          }}
+          placeholder="905551234567"
+          className="input-field force-ltr"
+        />
+      </label>
       <BiField label="العنوان — Address" ar={ar.address} en={en.address} onAr={(v) => setAr({ ...ar, address: v })} onEn={(v) => setEn({ ...en, address: v })} textarea rows={2} />
       <BiField label="ساعات العمل — Working hours" ar={ar.working_hours} en={en.working_hours} onAr={(v) => setAr({ ...ar, working_hours: v })} onEn={(v) => setEn({ ...en, working_hours: v })} />
       <BiField label="رابط الخريطة — Map embed URL" ar={ar.map_embed_url} en={en.map_embed_url} onAr={(v) => setAr({ ...ar, map_embed_url: v })} onEn={(v) => setEn({ ...en, map_embed_url: v })} textarea rows={2} />

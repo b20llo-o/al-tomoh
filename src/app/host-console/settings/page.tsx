@@ -7,11 +7,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
   const { t } = await getLocaleT();
-  const [currency, shipping, tax, payments] = await Promise.all([
+  const [currency, shipping, tax] = await Promise.all([
     getStoreSetting("currency"),
     getStoreSetting("shipping"),
     getStoreSetting("tax"),
-    getStoreSetting("payments"),
   ]);
 
   return (
@@ -20,7 +19,7 @@ export default async function AdminSettingsPage() {
         title={t("adm.settings")}
         description={t("adm.settingsDesc")}
       />
-      <SettingsEditor currency={currency} shipping={shipping} tax={tax} payments={payments} />
+      <SettingsEditor currency={currency} shipping={shipping} tax={tax} />
     </div>
   );
 }

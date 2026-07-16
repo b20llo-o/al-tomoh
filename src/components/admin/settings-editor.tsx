@@ -11,19 +11,16 @@ export function SettingsEditor({
   currency,
   shipping,
   tax,
-  payments,
 }: {
   currency: StoreSettingsMap["currency"];
   shipping: StoreSettingsMap["shipping"];
   tax: StoreSettingsMap["tax"];
-  payments: StoreSettingsMap["payments"];
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <CurrencyCard initial={currency} />
       <ShippingCard initial={shipping} />
       <TaxCard initial={tax} />
-      <PaymentsCard initial={payments} />
     </div>
   );
 }
@@ -220,40 +217,3 @@ function TaxCard({ initial }: { initial: StoreSettingsMap["tax"] }) {
   );
 }
 
-function PaymentsCard({ initial }: { initial: StoreSettingsMap["payments"] }) {
-  const { t } = useLocale();
-  const [data, setData] = useState(initial);
-  const { status, saving, run } = useSaver();
-  return (
-    <Card
-      title={t("adm.payments")}
-      description={t("adm.paymentsDesc")}
-      saving={saving}
-      status={status}
-      onSubmit={(e) => {
-        e.preventDefault();
-        run(() => saveStoreSetting("payments", data));
-      }}
-    >
-      <CheckField
-        label={t("adm.enableCard")}
-        checked={data.enable_card_payments}
-        onChange={(v) => setData({ ...data, enable_card_payments: v })}
-      />
-      <CheckField
-        label={t("adm.enableBank")}
-        checked={data.enable_bank_transfer}
-        onChange={(v) => setData({ ...data, enable_bank_transfer: v })}
-      />
-      <label className="block">
-        <span className="label-field">{t("adm.bankInstructions")}</span>
-        <textarea
-          value={data.bank_transfer_instructions}
-          onChange={(e) => setData({ ...data, bank_transfer_instructions: e.target.value })}
-          rows={3}
-          className="input-field resize-y"
-        />
-      </label>
-    </Card>
-  );
-}

@@ -46,7 +46,7 @@ export function BrandWordmark({ compact = false }: { compact?: boolean }) {
         </span>
         {!compact && (
           <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-600 dark:text-brand-400">
-            {isAr ? "" : "Bookstore"}
+            {isAr ? "Al-Tomoh Bookstore" : "Bookstore"}
           </span>
         )}
       </span>

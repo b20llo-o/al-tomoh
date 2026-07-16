@@ -169,6 +169,8 @@ export interface SiteContentMap {
   contact_info: {
     email: string;
     phone: string;
+    /** WhatsApp number in international format (digits only, e.g. 905551234567). */
+    whatsapp: string;
     address: string;
     map_embed_url: string;
     working_hours: string;
