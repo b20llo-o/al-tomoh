@@ -108,7 +108,7 @@ export function BooksTable({ books }: { books: Book[] }) {
                       {book.category ? categoryName(book.category, locale) : "—"}
                     </td>
                     <td className="px-3 py-3 font-medium">
-                      {formatPrice(book.price_try, "TRY")}
+                      {formatPrice(book.price_try, "SYP")}
                     </td>
                     <td className="px-3 py-3">
                       <span
