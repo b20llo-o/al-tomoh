@@ -115,7 +115,7 @@ export async function saveBook(
     return { success: false, message: "Title, author, and slug are required." };
   }
   if (payload.price_try <= 0) {
-    return { success: false, message: "Please enter a valid TRY price." };
+    return { success: false, message: "Please enter a valid SYP price." };
   }
 
   if (id) {
