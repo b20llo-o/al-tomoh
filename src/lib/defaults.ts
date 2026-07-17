@@ -55,7 +55,7 @@ const AR_CONTENT: SiteContentMap = {
       },
       {
         title: "أسعار عادلة وواضحة",
-        description: "أسعار واضحة بالليرة التركية والدولار الأمريكي، بلا تكاليف خفية عند الدفع.",
+        description: "أسعار واضحة بالليرة السورية والدولار الأمريكي، بلا تكاليف خفية.",
       },
       {
         title: "دعم إنساني",
@@ -138,7 +138,7 @@ const EN_CONTENT: SiteContentMap = {
       {
         title: "Fair, transparent prices",
         description:
-          "Clear pricing in Turkish Lira and US Dollars, with no hidden costs at checkout.",
+          "Clear pricing in Syrian Pounds and US Dollars, with no hidden costs.",
       },
       {
         title: "Human support",
@@ -181,7 +181,7 @@ export const DEFAULT_SITE_CONTENT: Record<Locale, SiteContentMap> = {
 
 export const DEFAULT_STORE_SETTINGS: StoreSettingsMap = {
   currency: {
-    try_per_usd: 34,
+    try_per_usd: 13000,
   },
   shipping: {
     domestic_flat_try: 80,
