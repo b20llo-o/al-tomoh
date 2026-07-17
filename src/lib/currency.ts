@@ -1,47 +1,49 @@
 import type { Book, Currency } from "./types";
 
-export const CURRENCIES: Currency[] = ["TRY", "USD"];
-export const DEFAULT_CURRENCY: Currency = "TRY";
+export const CURRENCIES: Currency[] = ["SYP", "USD"];
+export const DEFAULT_CURRENCY: Currency = "SYP";
 export const CURRENCY_COOKIE = "altomoh-currency";
-/** Fallback used only when store settings cannot be loaded */
-export const FALLBACK_TRY_PER_USD = 34;
+/** Fallback used only when store settings cannot be loaded (SYP per 1 USD) */
+export const FALLBACK_SYP_PER_USD = 13000;
 
 export function isCurrency(value: string | undefined | null): value is Currency {
-  return value === "TRY" || value === "USD";
+  return value === "SYP" || value === "USD";
 }
 
 /**
  * Resolve a book's price in the requested currency.
- * Books always carry a TRY price; the USD price is either set explicitly
- * by the store admin or derived from the configured exchange rate.
+ * Books always carry a base (Syrian Pound) price in `price_try`; the USD price
+ * is either set explicitly by the store admin or derived from the configured
+ * exchange rate. (The column is still named `price_try` for backwards data
+ * compatibility, but it now holds the SYP amount.)
  */
 export function bookPrice(
   book: Pick<Book, "price_try" | "price_usd">,
   currency: Currency,
-  tryPerUsd: number
+  sypPerUsd: number
 ): number {
-  if (currency === "TRY") return book.price_try;
+  if (currency === "SYP") return book.price_try;
   if (book.price_usd != null && book.price_usd > 0) return book.price_usd;
-  const rate = tryPerUsd > 0 ? tryPerUsd : FALLBACK_TRY_PER_USD;
+  const rate = sypPerUsd > 0 ? sypPerUsd : FALLBACK_SYP_PER_USD;
   return round2(book.price_try / rate);
 }
 
 export function convertAmount(
-  amountTry: number,
+  amountSyp: number,
   currency: Currency,
-  tryPerUsd: number
+  sypPerUsd: number
 ): number {
-  if (currency === "TRY") return round2(amountTry);
-  const rate = tryPerUsd > 0 ? tryPerUsd : FALLBACK_TRY_PER_USD;
-  return round2(amountTry / rate);
+  if (currency === "SYP") return round2(amountSyp);
+  const rate = sypPerUsd > 0 ? sypPerUsd : FALLBACK_SYP_PER_USD;
+  return round2(amountSyp / rate);
 }
 
 export function formatPrice(amount: number, currency: Currency): string {
-  return new Intl.NumberFormat(currency === "TRY" ? "tr-TR" : "en-US", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: currency === "SYP" ? 0 : 2,
+    maximumFractionDigits: currency === "SYP" ? 0 : 2,
   }).format(amount);
 }
 
