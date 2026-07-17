@@ -9,7 +9,7 @@ export type OrderStatus =
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
-export type Currency = "TRY" | "USD";
+export type Currency = "SYP" | "USD";
 
 export interface Profile {
   id: string;
