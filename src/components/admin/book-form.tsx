@@ -226,6 +226,19 @@ export function BookForm({
                 className="input-field"
               />
             </Field>
+            <Field label={t("adm.discountPercent")}>
+              <input
+                name="discount_percent"
+                type="number"
+                min="0"
+                max="95"
+                step="1"
+                defaultValue={book?.discount_percent ?? 0}
+                placeholder="0"
+                className="input-field"
+              />
+              <span className="mt-1 block text-xs text-muted">{t("adm.discountHint")}</span>
+            </Field>
           </div>
         </section>
       </div>

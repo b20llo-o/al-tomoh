@@ -41,11 +41,12 @@ export default async function HomePage({
 
   const { locale, t } = await getLocaleT();
 
-  const [featured, newArrivals, bestsellers, categories, testimonials, homepage] =
+  const [featured, newArrivals, bestsellers, offers, categories, testimonials, homepage] =
     await Promise.all([
       getVisibleBooks({ featured: true, limit: 5 }),
       getVisibleBooks({ newArrival: true, limit: 5 }),
       getVisibleBooks({ bestseller: true, limit: 5 }),
+      getVisibleBooks({ discounted: true, limit: 5 }),
       getActiveCategories(),
       getVisibleTestimonials(),
       getSiteContent("homepage", locale),
@@ -90,6 +91,20 @@ export default async function HomePage({
           </div>
         </div>
       </section>
+
+      {/* ── Offers & discounts (only when some books are on sale) ─────── */}
+      {offers.length > 0 && (
+        <section className="container-page py-16 sm:py-20">
+          <SectionHeading
+            eyebrow={t("home.offersEyebrow")}
+            title={t("home.offersTitle")}
+            description={t("home.offersDesc")}
+            href="/offers"
+            linkLabel={t("common.viewAll")}
+          />
+          <BookGrid books={offers} emptyMessage={t("home.offersEmpty")} />
+        </section>
+      )}
 
       {/* ── Featured books ───────────────────────────────────────────── */}
       <section className="container-page py-16 sm:py-20">

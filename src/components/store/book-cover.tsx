@@ -1,10 +1,12 @@
 import Image from "next/image";
 import { BookOpen } from "lucide-react";
+import { DiscountBadge } from "./discount-badge";
 import { cn } from "@/lib/utils";
 
 /**
  * Book cover with an elegant typographic fallback when no image is set,
- * so the catalogue never shows a broken image.
+ * so the catalogue never shows a broken image. When `discountPercent` is set a
+ * red nine-pointed star is pinned to the top corner.
  */
 export function BookCover({
   title,
@@ -12,12 +14,14 @@ export function BookCover({
   className,
   sizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw",
   priority = false,
+  discountPercent = 0,
 }: {
   title: string;
   coverUrl: string | null;
   className?: string;
   sizes?: string;
   priority?: boolean;
+  discountPercent?: number;
 }) {
   return (
     <div
@@ -26,6 +30,9 @@ export function BookCover({
         className
       )}
     >
+      {discountPercent > 0 && (
+        <DiscountBadge percent={discountPercent} className="end-1.5 top-1.5 h-12 w-12 sm:h-14 sm:w-14" />
+      )}
       {coverUrl ? (
         <Image
           src={coverUrl}

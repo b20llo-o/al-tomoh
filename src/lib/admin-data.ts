@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Book, Category, Order, OrderItem, Profile } from "@/lib/types";
 
 interface DashboardBook {
@@ -107,7 +108,7 @@ export async function getAllOrders(): Promise<(Order & { order_items: OrderItem[
 }
 
 export async function getAllCustomers(): Promise<
-  (Profile & { order_count: number })[]
+  (Profile & { order_count: number; email: string | null })[]
 > {
   const supabase = await createClient();
   const { data: profiles } = await supabase
@@ -121,8 +122,24 @@ export async function getAllCustomers(): Promise<
     counts.set(o.user_id, (counts.get(o.user_id) ?? 0) + 1);
   }
 
+  // Emails live in auth.users, not profiles — read them with the service-role
+  // client. Degrades to null when the key isn't configured.
+  const emailById = new Map<string, string>();
+  const admin = createAdminClient();
+  if (admin) {
+    try {
+      const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      for (const u of data?.users ?? []) {
+        if (u.email) emailById.set(u.id, u.email);
+      }
+    } catch {
+      // ignore — the table still renders without emails
+    }
+  }
+
   return ((profiles as Profile[]) ?? []).map((p) => ({
     ...p,
     order_count: counts.get(p.id) ?? 0,
+    email: emailById.get(p.id) ?? null,
   }));
 }

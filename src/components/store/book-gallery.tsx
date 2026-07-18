@@ -9,10 +9,12 @@ export function BookGallery({
   title,
   coverUrl,
   gallery,
+  discountPercent = 0,
 }: {
   title: string;
   coverUrl: string | null;
   gallery: string[];
+  discountPercent?: number;
 }) {
   const images = [coverUrl, ...gallery].filter((url): url is string => Boolean(url));
   const [active, setActive] = useState(0);
@@ -26,6 +28,7 @@ export function BookGallery({
           sizes="(max-width: 1024px) 90vw, 40vw"
           priority
           className="shadow-card"
+          discountPercent={discountPercent}
         />
       </div>
 

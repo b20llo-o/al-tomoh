@@ -94,6 +94,7 @@ create table if not exists public.books (
   category_ids uuid[] not null default '{}',
   price_try numeric(12, 2) not null default 0,
   price_usd numeric(12, 2),
+  discount_percent integer not null default 0 check (discount_percent >= 0 and discount_percent <= 95),
   pages integer,
   language text,
   publication_year integer,

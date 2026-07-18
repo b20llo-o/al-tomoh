@@ -12,7 +12,7 @@ export function CustomersTable({
   customers,
   currentUserId,
 }: {
-  customers: (Profile & { order_count: number })[];
+  customers: (Profile & { order_count: number; email: string | null })[];
   currentUserId: string;
 }) {
   const { t } = useLocale();
@@ -23,6 +23,7 @@ export function CustomersTable({
     const q = query.toLowerCase();
     return (
       (c.full_name ?? "").toLowerCase().includes(q) ||
+      (c.email ?? "").toLowerCase().includes(q) ||
       (c.phone ?? "").toLowerCase().includes(q)
     );
   });
@@ -47,6 +48,7 @@ export function CustomersTable({
             <thead>
               <tr className="border-b border-navy-900/10 text-start text-xs uppercase tracking-wider text-muted dark:border-parchment-100/10">
                 <th className="px-5 py-3 text-start font-semibold">{t("adm.colCustomer")}</th>
+                <th className="px-3 py-3 text-start font-semibold">{t("adm.colEmail")}</th>
                 <th className="px-3 py-3 text-start font-semibold">{t("adm.colRole")}</th>
                 <th className="px-3 py-3 text-start font-semibold">{t("adm.colOrders")}</th>
                 <th className="px-3 py-3 text-start font-semibold">{t("adm.colJoined")}</th>
@@ -56,7 +58,7 @@ export function CustomersTable({
             <tbody className="divide-y divide-navy-900/5 dark:divide-parchment-100/5">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-muted">
+                  <td colSpan={6} className="px-5 py-12 text-center text-muted">
                     {t("adm.noCustomers")}
                   </td>
                 </tr>
@@ -68,6 +70,18 @@ export function CustomersTable({
                         {customer.full_name ?? t("adm.unnamed")}
                       </p>
                       {customer.phone && <p className="force-ltr text-xs text-muted">{customer.phone}</p>}
+                    </td>
+                    <td className="px-3 py-3">
+                      {customer.email ? (
+                        <a
+                          href={`mailto:${customer.email}`}
+                          className="force-ltr text-sm text-brand-600 hover:underline dark:text-brand-400"
+                        >
+                          {customer.email}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted">—</span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <span

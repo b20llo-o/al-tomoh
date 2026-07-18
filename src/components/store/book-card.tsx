@@ -18,7 +18,7 @@ export function BookCard({ book }: { book: Book }) {
   return (
     <article className="group card-surface-hover flex flex-col overflow-hidden p-3">
       <Link href={`/books/${book.slug}`} className="block">
-        <BookCover title={title} coverUrl={book.cover_url} />
+        <BookCover title={title} coverUrl={book.cover_url} discountPercent={book.discount_percent} />
       </Link>
       <div className="flex flex-1 flex-col px-1.5 pb-1.5 pt-4">
         <div className="mb-1.5 flex items-center gap-2">

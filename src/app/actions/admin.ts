@@ -85,6 +85,7 @@ function parseBookForm(formData: FormData) {
     category_ids: categoryIds,
     price_try: Number.isFinite(priceTry) ? priceTry : 0,
     price_usd: priceUsdRaw ? Number(priceUsdRaw) : null,
+    discount_percent: Math.min(95, Math.max(0, Math.round(Number(formData.get("discount_percent")) || 0))),
     pages: formData.get("pages") ? Number(formData.get("pages")) : null,
     language: String(formData.get("language") ?? "").trim() || null,
     publication_year: formData.get("publication_year")
@@ -115,7 +116,7 @@ export async function saveBook(
     return { success: false, message: "Title, author, and slug are required." };
   }
   if (payload.price_try <= 0) {
-    return { success: false, message: "Please enter a valid TRY price." };
+    return { success: false, message: "Please enter a valid SYP price." };
   }
 
   if (id) {

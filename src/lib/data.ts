@@ -34,6 +34,7 @@ interface BookQueryOptions {
   featured?: boolean;
   bestseller?: boolean;
   newArrival?: boolean;
+  discounted?: boolean;
   categoryId?: string;
   limit?: number;
 }
@@ -53,6 +54,7 @@ const cachedVisibleBooks = unstable_cache(
       if (options.featured) query = query.eq("is_featured", true);
       if (options.bestseller) query = query.eq("is_bestseller", true);
       if (options.newArrival) query = query.eq("is_new_arrival", true);
+      if (options.discounted) query = query.gt("discount_percent", 0);
       if (options.categoryId) {
         // A book belongs to a category if it is the primary OR in the extras array.
         query = query.or(

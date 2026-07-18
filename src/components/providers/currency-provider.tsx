@@ -11,21 +11,27 @@ import {
 import {
   CURRENCY_COOKIE,
   DEFAULT_CURRENCY,
+  bookBasePrice,
   bookPrice,
   convertAmount,
   formatPrice,
+  hasDiscount,
 } from "@/lib/currency";
 import type { Book, Currency } from "@/lib/types";
+
+type PricedBook = Pick<Book, "price_try" | "price_usd" | "discount_percent">;
 
 interface CurrencyContextValue {
   currency: Currency;
   setCurrency: (currency: Currency) => void;
   tryPerUsd: number;
-  /** Format a book's price in the active currency */
-  priceOf: (book: Pick<Book, "price_try" | "price_usd">) => string;
-  /** Raw numeric price of a book in the active currency */
-  amountOf: (book: Pick<Book, "price_try" | "price_usd">) => number;
-  /** Convert and format an arbitrary TRY amount */
+  /** Format a book's price (with discount applied) in the active currency */
+  priceOf: (book: PricedBook) => string;
+  /** Raw numeric price of a book (with discount) in the active currency */
+  amountOf: (book: PricedBook) => number;
+  /** Formatted list price BEFORE discount, or null when there is no discount */
+  originalPriceOf: (book: PricedBook) => string | null;
+  /** Convert and format an arbitrary SYP amount */
   formatTry: (amountTry: number) => string;
 }
 
@@ -57,6 +63,10 @@ export function CurrencyProvider({
       tryPerUsd,
       priceOf: (book) => formatPrice(bookPrice(book, currency, tryPerUsd), currency),
       amountOf: (book) => bookPrice(book, currency, tryPerUsd),
+      originalPriceOf: (book) =>
+        hasDiscount(book)
+          ? formatPrice(bookBasePrice(book, currency, tryPerUsd), currency)
+          : null,
       formatTry: (amountTry) =>
         formatPrice(convertAmount(amountTry, currency, tryPerUsd), currency),
     }),

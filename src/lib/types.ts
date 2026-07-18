@@ -9,7 +9,7 @@ export type OrderStatus =
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
-export type Currency = "TRY" | "USD";
+export type Currency = "SYP" | "USD";
 
 export interface Profile {
   id: string;
@@ -52,6 +52,8 @@ export interface Book {
   category_ids: string[];
   price_try: number;
   price_usd: number | null;
+  /** Discount percentage (0–95). 0 means no discount. */
+  discount_percent: number;
   pages: number | null;
   language: string | null;
   publication_year: number | null;

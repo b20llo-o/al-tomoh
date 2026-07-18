@@ -81,7 +81,12 @@ export default async function BookPage({
       )}
 
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
-        <BookGallery title={title} coverUrl={book.cover_url} gallery={book.gallery ?? []} />
+        <BookGallery
+          title={title}
+          coverUrl={book.cover_url}
+          gallery={book.gallery ?? []}
+          discountPercent={book.discount_percent}
+        />
 
         <div className="animate-fade-up">
           <div className="mb-3 flex flex-wrap items-center gap-2">

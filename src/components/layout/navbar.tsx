@@ -35,6 +35,7 @@ export function Navbar() {
   const NAV_LINKS = [
     { href: "/", label: t("nav.home") },
     { href: "/categories", label: t("nav.categories") },
+    { href: "/offers", label: t("nav.offers") },
     { href: "/services", label: t("nav.services") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
@@ -91,7 +92,7 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
+                      "relative whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
                       active
                         ? "text-brand-600 dark:text-brand-400"
                         : "text-navy-900/70 hover:text-navy-950 dark:text-parchment-100/70 dark:hover:text-parchment-50"

@@ -171,12 +171,13 @@ export function AuthPanel() {
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]*"
-              maxLength={6}
+              // Supabase's OTP length can be 6–10 digits; accept the full code.
+              maxLength={10}
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
               required
-              className="input-field force-ltr text-center text-lg tracking-[0.5em]"
-              placeholder="••••••"
+              className="input-field force-ltr text-center text-lg tracking-[0.4em]"
+              placeholder="------"
             />
           </div>
 
