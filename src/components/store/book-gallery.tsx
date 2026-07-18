@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { BookCover } from "./book-cover";
+import { DiscountBadge } from "./discount-badge";
 import { cn } from "@/lib/utils";
 
 export function BookGallery({
@@ -21,15 +22,20 @@ export function BookGallery({
 
   return (
     <div className="animate-fade-up">
-      <div className="mx-auto w-full max-w-md">
+      <div className="relative mx-auto w-full max-w-md">
         <BookCover
           title={title}
           coverUrl={images[active] ?? null}
           sizes="(max-width: 1024px) 90vw, 40vw"
           priority
           className="shadow-card"
-          discountPercent={discountPercent}
         />
+        {discountPercent > 0 && (
+          <DiscountBadge
+            percent={discountPercent}
+            className="start-0 top-0 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2 sm:h-20 sm:w-20"
+          />
+        )}
       </div>
 
       {images.length > 1 && (
