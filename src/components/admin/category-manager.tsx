@@ -158,10 +158,6 @@ function CategoryForm({
           />
         </label>
         <label className="block">
-          <span className="label-field">Slug (URL)</span>
-          <input name="slug" defaultValue={category?.slug ?? ""} placeholder="auto from name" dir="ltr" className="input-field" />
-        </label>
-        <label className="block">
           <span className="label-field">{t("adm.descriptionL")} — العربية</span>
           <textarea name="description" defaultValue={category?.description ?? ""} rows={3} dir="rtl" className="input-field resize-y" />
         </label>
