@@ -99,15 +99,6 @@ export function BookForm({
             <Field label="Publisher (English)">
               <input name="publisher_en" defaultValue={book?.publisher_en ?? ""} dir="ltr" className="input-field" />
             </Field>
-            <Field label="Slug (URL)">
-              <input
-                name="slug"
-                defaultValue={book?.slug ?? ""}
-                placeholder="auto-generated from title"
-                dir="ltr"
-                className="input-field"
-              />
-            </Field>
             <Field label="ISBN">
               <input name="isbn" defaultValue={book?.isbn ?? ""} dir="ltr" className="input-field" />
             </Field>
