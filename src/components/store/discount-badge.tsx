@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
 /**
- * A red nine-pointed star ("seal") showing the discount percentage. It is meant
- * to be pinned OUTSIDE the top corner of a book cover (via absolute positioning
- * from the parent) so it never hides any part of the artwork.
+ * A red starburst "seal" showing the discount percentage, centred in the star.
+ * It is meant to be pinned OUTSIDE the top corner of a book cover (via absolute
+ * positioning from the parent) so it never hides any part of the artwork.
  */
 export function DiscountBadge({
   percent,
@@ -12,8 +12,9 @@ export function DiscountBadge({
   percent: number;
   className?: string;
 }) {
-  const outer = starPoints(9, 50, 50, 48, 33);
-  const inner = starPoints(9, 50, 50, 40, 28);
+  const SPIKES = 16;
+  const outer = starPoints(SPIKES, 50, 50, 49, 40);
+  const inner = starPoints(SPIKES, 50, 50, 42, 34);
   const gradId = `disc-${percent}`;
 
   return (
@@ -48,15 +49,15 @@ export function DiscountBadge({
         />
         <text
           x="50"
-          y="51"
+          y="50"
           textAnchor="middle"
           dominantBaseline="central"
           fill="#ffffff"
           fontWeight="800"
-          fontSize="26"
+          fontSize="27"
           fontFamily="Arial, sans-serif"
         >
-          -{percent}%
+          {percent}%
         </text>
       </svg>
     </div>
