@@ -332,25 +332,9 @@ export async function saveStoreSetting(
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
   if (error) return { success: false, message: humanizeError(error.message) };
 
-  // Changing the exchange rate re-prices the catalogue. Displayed prices are
-  // always derived from USD × the current rate, but the stored SYP snapshot
-  // (used by search filtering/sorting) has to be refreshed too.
-  if (key === "currency") {
-    const rate = Number((value as { try_per_usd?: number })?.try_per_usd);
-    if (Number.isFinite(rate) && rate > 0) {
-      const { data: books } = await supabase
-        .from("books")
-        .select("id, price_usd")
-        .gt("price_usd", 0);
-      for (const book of books ?? []) {
-        await supabase
-          .from("books")
-          .update({ price_try: Math.round(Number(book.price_usd) * rate) })
-          .eq("id", book.id);
-      }
-      revalidateTag("books");
-    }
-  }
+  // Prices shown in the store are always derived from USD × the current rate,
+  // so changing the rate re-prices the catalogue with no per-book writes.
+  if (key === "currency") revalidateTag("books");
 
   await logActivity("update", "store_settings", key);
   revalidateTag("settings");
