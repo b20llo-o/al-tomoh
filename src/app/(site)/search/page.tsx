@@ -31,7 +31,7 @@ async function searchBooks(params: SearchParams): Promise<Book[]> {
       const escaped = q.replace(/[%_,()]/g, " ").trim();
       if (escaped) {
         query = query.or(
-          `title.ilike.%${escaped}%,author.ilike.%${escaped}%,publisher.ilike.%${escaped}%,isbn.ilike.%${escaped}%`
+          `title.ilike.%${escaped}%,author.ilike.%${escaped}%,publisher.ilike.%${escaped}%`
         );
       }
     }
