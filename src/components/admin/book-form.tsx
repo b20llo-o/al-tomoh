@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
-import { ImagePlus, Loader2, Upload } from "lucide-react";
+import { ImagePlus, Loader2, Upload, X } from "lucide-react";
 import { saveBook, type AdminResult } from "@/app/actions/admin";
 import { uploadBookCover } from "@/app/actions/upload";
 import { useLocale } from "@/components/providers/locale-provider";
@@ -20,7 +20,9 @@ export function BookForm({
   const router = useRouter();
   const { t } = useLocale();
   const [coverUrl, setCoverUrl] = useState(book?.cover_url ?? "");
+  const [gallery, setGallery] = useState<string[]>(book?.gallery ?? []);
   const [uploading, setUploading] = useState(false);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [title, setTitle] = useState(book?.title ?? "");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
@@ -55,6 +57,28 @@ export function BookForm({
       setUploadError(result.message ?? "Upload failed.");
     }
     setUploading(false);
+    e.target.value = ""; // allow re-picking the same file
+  }
+
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setGalleryUploading(true);
+    setUploadError(null);
+    const uploaded: string[] = [];
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const result = await uploadBookCover(fd);
+      if (result.success && result.url) {
+        uploaded.push(result.url);
+      } else {
+        setUploadError(result.message ?? "Upload failed.");
+      }
+    }
+    if (uploaded.length > 0) setGallery((g) => [...g, ...uploaded]);
+    setGalleryUploading(false);
+    e.target.value = "";
   }
 
   return (
@@ -98,9 +122,6 @@ export function BookForm({
             </Field>
             <Field label="Publisher (English)">
               <input name="publisher_en" defaultValue={book?.publisher_en ?? ""} dir="ltr" className="input-field" />
-            </Field>
-            <Field label="ISBN">
-              <input name="isbn" defaultValue={book?.isbn ?? ""} dir="ltr" className="input-field" />
             </Field>
             <Field label="Language">
               <input name="language" defaultValue={book?.language ?? ""} placeholder="مثال: العربية" className="input-field" />
@@ -232,44 +253,80 @@ export function BookForm({
           <div className="mx-auto w-40">
             <BookCover title={title || "Untitled"} coverUrl={coverUrl || null} sizes="160px" />
           </div>
-          <label className="btn-outline mt-4 w-full cursor-pointer">
+          <label htmlFor="cover-file" className="btn-outline mt-4 w-full cursor-pointer">
             {uploading ? (
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
             ) : (
               <Upload className="h-4 w-4" strokeWidth={1.75} />
             )}
             {uploading ? t("adm.uploading") : t("adm.uploadCover")}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleUpload}
-              disabled={uploading}
-              className="sr-only"
-            />
           </label>
-          <div className="mt-3">
-            <Field label={t("adm.orPasteUrl")}>
-              <input
-                value={coverUrl}
-                onChange={(e) => setCoverUrl(e.target.value)}
-                placeholder="https://…"
-                className="input-field"
-              />
-            </Field>
-          </div>
+          <input
+            id="cover-file"
+            name="cover_file"
+            type="file"
+            accept="image/*"
+            onChange={handleUpload}
+            disabled={uploading}
+            className="sr-only"
+          />
+          {coverUrl && (
+            <button
+              type="button"
+              onClick={() => setCoverUrl("")}
+              className="mt-2 w-full text-xs font-medium text-red-600 hover:underline dark:text-red-400"
+            >
+              {t("adm.removeImage")}
+            </button>
+          )}
           {uploadError && (
             <p className="mt-2 text-xs text-red-600 dark:text-red-400">{uploadError}</p>
           )}
-          <div className="mt-4">
-            <Field label={t("adm.galleryUrls")}>
-              <textarea
-                name="gallery"
-                defaultValue={(book?.gallery ?? []).join("\n")}
-                rows={3}
-                placeholder="https://…"
-                className="input-field resize-y text-xs"
-              />
-            </Field>
+
+          {/* Extra images — uploaded from the device, same as the cover. */}
+          <div className="mt-6">
+            <p className="label-field">{t("adm.galleryUrls")}</p>
+            <input type="hidden" name="gallery" value={gallery.join("\n")} />
+            {gallery.length > 0 && (
+              <ul className="mb-3 grid grid-cols-3 gap-2">
+                {gallery.map((url) => (
+                  <li key={url} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt=""
+                      className="aspect-[2/3] w-full rounded-lg object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setGallery((g) => g.filter((u) => u !== url))}
+                      aria-label={t("adm.removeImage")}
+                      className="absolute end-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-navy-950/70 text-white transition-colors hover:bg-red-600"
+                    >
+                      <X className="h-3.5 w-3.5" strokeWidth={2} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <label htmlFor="gallery-files" className="btn-outline w-full cursor-pointer">
+              {galleryUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.75} />
+              ) : (
+                <Upload className="h-4 w-4" strokeWidth={1.75} />
+              )}
+              {galleryUploading ? t("adm.uploading") : t("adm.addImages")}
+            </label>
+            <input
+              id="gallery-files"
+              name="gallery_files"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleGalleryUpload}
+              disabled={galleryUploading}
+              className="sr-only"
+            />
           </div>
         </section>
 
