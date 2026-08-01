@@ -32,7 +32,7 @@ export function BooksTable({ books }: { books: Book[] }) {
       return (
         book.title.toLowerCase().includes(q) ||
         book.author.toLowerCase().includes(q) ||
-        (book.isbn ?? "").toLowerCase().includes(q)
+        (book.publisher ?? "").toLowerCase().includes(q)
       );
     }
     return true;
