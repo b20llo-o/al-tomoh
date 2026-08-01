@@ -45,7 +45,6 @@ export default async function BookPage({
   const facts: { label: string; value: string | null; ltr?: boolean }[] = [
     { label: t("book.author"), value: author },
     { label: t("book.publisher"), value: bookPublisher(book, locale) },
-    { label: t("book.isbn"), value: book.isbn, ltr: true },
     {
       label: t("book.category"),
       value: cats.length ? cats.map((c) => categoryName(c, locale)).join("، ") : null,

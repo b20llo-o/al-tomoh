@@ -2,6 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getTryPerUsd } from "@/lib/data";
 import { ADMIN_PATH } from "@/lib/defaults";
 import { slugify } from "@/lib/utils";
 import type {
@@ -53,13 +54,40 @@ const DENIED: AdminResult = {
   message: "You are not authorized to perform this action.",
 };
 
+/**
+ * Slugs are generated from the title/name, so two records can easily want the
+ * same one. Find a free variant ("title", "title-2", "title-3", …) instead of
+ * failing the save with a duplicate-key error. `currentId` is excluded so a
+ * record keeps its own slug when edited.
+ */
+async function uniqueSlug(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  table: "books" | "categories",
+  base: string,
+  currentId: string | null
+): Promise<string> {
+  const root = base || "item";
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const candidate = attempt === 0 ? root : `${root}-${attempt + 1}`;
+    let query = supabase.from(table).select("id").eq("slug", candidate).limit(1);
+    if (currentId) query = query.neq("id", currentId);
+    const { data, error } = await query;
+    if (error) return candidate; // let the database be the final arbiter
+    if (!data || data.length === 0) return candidate;
+  }
+  return `${root}-${Date.now()}`;
+}
+
 // ── Books ──────────────────────────────────────────────────────────────
 
-function parseBookForm(formData: FormData) {
+/**
+ * Books are priced in USD. The Syrian Pound amount is derived from the
+ * exchange rate set in the host console; we also store it in `price_try` as a
+ * snapshot so search can filter and sort by price at the database level.
+ */
+function parseBookForm(formData: FormData, sypPerUsd: number) {
   const title = String(formData.get("title") ?? "").trim();
-  const providedSlug = String(formData.get("slug") ?? "").trim();
-  const priceTry = Number(formData.get("price_try"));
-  const priceUsdRaw = String(formData.get("price_usd") ?? "").trim();
+  const priceUsd = Number(formData.get("price_usd"));
   const galleryRaw = String(formData.get("gallery") ?? "").trim();
 
   // Multi-category: all checked category ids; the first is the primary.
@@ -73,18 +101,19 @@ function parseBookForm(formData: FormData) {
   return {
     title,
     title_en: String(formData.get("title_en") ?? "").trim() || null,
-    slug: providedSlug ? slugify(providedSlug) : slugify(title),
+    slug: slugify(title),
     author: String(formData.get("author") ?? "").trim(),
     author_en: String(formData.get("author_en") ?? "").trim() || null,
     publisher: String(formData.get("publisher") ?? "").trim() || null,
     publisher_en: String(formData.get("publisher_en") ?? "").trim() || null,
-    isbn: String(formData.get("isbn") ?? "").trim() || null,
     description: String(formData.get("description") ?? "").trim() || null,
     description_en: String(formData.get("description_en") ?? "").trim() || null,
     category_id: primaryCategory,
     category_ids: categoryIds,
-    price_try: Number.isFinite(priceTry) ? priceTry : 0,
-    price_usd: priceUsdRaw ? Number(priceUsdRaw) : null,
+    price_usd: Number.isFinite(priceUsd) && priceUsd > 0 ? priceUsd : 0,
+    // SYP snapshot derived from the configured rate (kept for search/sorting).
+    price_try:
+      Number.isFinite(priceUsd) && priceUsd > 0 ? Math.round(priceUsd * sypPerUsd) : 0,
     discount_percent: Math.min(95, Math.max(0, Math.round(Number(formData.get("discount_percent")) || 0))),
     pages: formData.get("pages") ? Number(formData.get("pages")) : null,
     language: String(formData.get("language") ?? "").trim() || null,
@@ -111,13 +140,15 @@ export async function saveBook(
   if (!isAdmin) return DENIED;
 
   const id = String(formData.get("id") ?? "").trim();
-  const payload = parseBookForm(formData);
+  const sypPerUsd = await getTryPerUsd();
+  const payload = parseBookForm(formData, sypPerUsd);
   if (!payload.title || !payload.author || !payload.slug) {
     return { success: false, message: "Title, author, and slug are required." };
   }
-  if (payload.price_try <= 0) {
-    return { success: false, message: "Please enter a valid SYP price." };
+  if (payload.price_usd <= 0) {
+    return { success: false, message: "Please enter a valid USD price." };
   }
+  payload.slug = await uniqueSlug(supabase, "books", payload.slug, id || null);
 
   if (id) {
     const { error } = await supabase
@@ -188,7 +219,7 @@ export async function saveCategory(
   const payload = {
     name,
     name_en: String(formData.get("name_en") ?? "").trim() || null,
-    slug: slugify(String(formData.get("slug") ?? "").trim() || name),
+    slug: await uniqueSlug(supabase, "categories", slugify(name), id || null),
     description: String(formData.get("description") ?? "").trim() || null,
     description_en: String(formData.get("description_en") ?? "").trim() || null,
     sort_order: Number(formData.get("sort_order")) || 0,
@@ -300,6 +331,26 @@ export async function saveStoreSetting(
     .from("store_settings")
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
   if (error) return { success: false, message: humanizeError(error.message) };
+
+  // Changing the exchange rate re-prices the catalogue. Displayed prices are
+  // always derived from USD × the current rate, but the stored SYP snapshot
+  // (used by search filtering/sorting) has to be refreshed too.
+  if (key === "currency") {
+    const rate = Number((value as { try_per_usd?: number })?.try_per_usd);
+    if (Number.isFinite(rate) && rate > 0) {
+      const { data: books } = await supabase
+        .from("books")
+        .select("id, price_usd")
+        .gt("price_usd", 0);
+      for (const book of books ?? []) {
+        await supabase
+          .from("books")
+          .update({ price_try: Math.round(Number(book.price_usd) * rate) })
+          .eq("id", book.id);
+      }
+      revalidateTag("books");
+    }
+  }
 
   await logActivity("update", "store_settings", key);
   revalidateTag("settings");

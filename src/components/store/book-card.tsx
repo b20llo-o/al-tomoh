@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { BookCover } from "./book-cover";
+import { DiscountBadge } from "./discount-badge";
 import { Price } from "./price";
 import { useCart } from "@/components/providers/cart-provider";
 import { useLocale } from "@/components/providers/locale-provider";
@@ -16,10 +17,18 @@ export function BookCard({ book }: { book: Book }) {
   const title = bookTitle(book, locale);
 
   return (
-    <article className="group card-surface-hover flex flex-col overflow-hidden p-3">
-      <Link href={`/books/${book.slug}`} className="block">
-        <BookCover title={title} coverUrl={book.cover_url} discountPercent={book.discount_percent} />
-      </Link>
+    <article className="group card-surface-hover relative flex flex-col p-3">
+      <div className="relative">
+        <Link href={`/books/${book.slug}`} className="block">
+          <BookCover title={title} coverUrl={book.cover_url} />
+        </Link>
+        {book.discount_percent > 0 && (
+          <DiscountBadge
+            percent={book.discount_percent}
+            className="start-0 top-0 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rtl:translate-x-1/2"
+          />
+        )}
+      </div>
       <div className="flex flex-1 flex-col px-1.5 pb-1.5 pt-4">
         <div className="mb-1.5 flex items-center gap-2">
           {book.category && (

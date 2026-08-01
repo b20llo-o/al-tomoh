@@ -32,7 +32,7 @@ export function BooksTable({ books }: { books: Book[] }) {
       return (
         book.title.toLowerCase().includes(q) ||
         book.author.toLowerCase().includes(q) ||
-        (book.isbn ?? "").toLowerCase().includes(q)
+        (book.publisher ?? "").toLowerCase().includes(q)
       );
     }
     return true;
@@ -108,7 +108,11 @@ export function BooksTable({ books }: { books: Book[] }) {
                       {book.category ? categoryName(book.category, locale) : "—"}
                     </td>
                     <td className="px-3 py-3 font-medium">
-                      {formatPrice(book.price_try, "SYP")}
+                      {book.price_usd && book.price_usd > 0 ? (
+                        <span className="force-ltr">{formatPrice(book.price_usd, "USD")}</span>
+                      ) : (
+                        <span className="force-ltr">{formatPrice(book.price_try, "SYP")}</span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <span
