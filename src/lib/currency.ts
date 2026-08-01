@@ -17,15 +17,27 @@ export function isCurrency(value: string | undefined | null): value is Currency 
  * exchange rate. (The column is still named `price_try` for backwards data
  * compatibility, but it now holds the SYP amount.)
  */
-/** The book's list price in the requested currency, BEFORE any discount. */
+/**
+ * The book's list price in the requested currency, BEFORE any discount.
+ *
+ * Books are priced by the admin in USD (`price_usd`); the Syrian Pound amount
+ * is derived from the exchange rate configured in the host console, so changing
+ * the rate re-prices the whole catalogue at once. `price_try` is only a stored
+ * SYP snapshot (used for search filtering) and a fallback for older books that
+ * were entered in SYP before the switch to USD pricing.
+ */
 export function bookBasePrice(
   book: Pick<Book, "price_try" | "price_usd">,
   currency: Currency,
   sypPerUsd: number
 ): number {
-  if (currency === "SYP") return book.price_try;
-  if (book.price_usd != null && book.price_usd > 0) return book.price_usd;
   const rate = sypPerUsd > 0 ? sypPerUsd : FALLBACK_SYP_PER_USD;
+  const usd = book.price_usd;
+  if (usd != null && usd > 0) {
+    return currency === "USD" ? usd : Math.round(usd * rate);
+  }
+  // Legacy book priced in SYP only.
+  if (currency === "SYP") return book.price_try;
   return round2(book.price_try / rate);
 }
 
