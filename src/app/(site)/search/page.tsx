@@ -1,7 +1,12 @@
 import { BookGrid } from "@/components/store/book-grid";
 import { SearchFilters } from "@/components/store/search-filters";
 import { createStaticClient } from "@/lib/supabase/static";
-import { BOOK_SELECT, getActiveCategories, getBookLanguages } from "@/lib/data";
+import {
+  BOOK_SELECT,
+  getActiveCategories,
+  getBookLanguages,
+  getTryPerUsd,
+} from "@/lib/data";
 import { getLocaleT } from "@/lib/locale-server";
 import type { Book } from "@/lib/types";
 
@@ -17,7 +22,7 @@ interface SearchParams {
   sort?: string;
 }
 
-async function searchBooks(params: SearchParams): Promise<Book[]> {
+async function searchBooks(params: SearchParams, sypPerUsd: number): Promise<Book[]> {
   try {
     const supabase = createStaticClient();
     let query = supabase
@@ -43,17 +48,21 @@ async function searchBooks(params: SearchParams): Promise<Book[]> {
     if (params.language) query = query.ilike("language", params.language);
     if (params.availability === "in-stock") query = query.gt("stock", 0);
 
+    // The range is entered in Syrian Pounds but books are priced in USD, so
+    // convert the bounds with the current rate and filter on the USD column —
+    // that stays correct no matter how often the exchange rate changes.
+    const rate = sypPerUsd > 0 ? sypPerUsd : 1;
     const min = Number(params.min);
     const max = Number(params.max);
-    if (Number.isFinite(min) && min > 0) query = query.gte("price_try", min);
-    if (Number.isFinite(max) && max > 0) query = query.lte("price_try", max);
+    if (Number.isFinite(min) && min > 0) query = query.gte("price_usd", min / rate);
+    if (Number.isFinite(max) && max > 0) query = query.lte("price_usd", max / rate);
 
     switch (params.sort) {
       case "price-asc":
-        query = query.order("price_try", { ascending: true });
+        query = query.order("price_usd", { ascending: true, nullsFirst: false });
         break;
       case "price-desc":
-        query = query.order("price_try", { ascending: false });
+        query = query.order("price_usd", { ascending: false, nullsFirst: false });
         break;
       case "title":
         query = query.order("title", { ascending: true });
@@ -82,8 +91,9 @@ export default async function SearchPage({
 }) {
   const params = await searchParams;
   const { t } = await getLocaleT();
+  const sypPerUsd = await getTryPerUsd();
   const [books, categories, languages] = await Promise.all([
-    searchBooks(params),
+    searchBooks(params, sypPerUsd),
     getActiveCategories(),
     getBookLanguages(),
   ]);
