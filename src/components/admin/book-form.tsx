@@ -185,27 +185,17 @@ export function BookForm({
             {t("adm.pricingStock")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label={t("adm.priceTry")} required>
-              <input
-                name="price_try"
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={book?.price_try ?? ""}
-                required
-                className="input-field"
-              />
-            </Field>
-            <Field label={t("adm.priceUsd")}>
+            <Field label={t("adm.priceUsd")} required>
               <input
                 name="price_usd"
                 type="number"
                 step="0.01"
                 min="0"
                 defaultValue={book?.price_usd ?? ""}
-                placeholder={t("adm.autoFromRate")}
+                required
                 className="input-field"
               />
+              <span className="mt-1 block text-xs text-muted">{t("adm.priceUsdHint")}</span>
             </Field>
             <Field label={t("adm.stock")} required>
               <input
