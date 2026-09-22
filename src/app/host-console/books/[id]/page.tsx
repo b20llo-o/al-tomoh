@@ -34,7 +34,9 @@ export default async function EditBookPage({
         All books
       </Link>
       <PageHeader title="Edit book" description={(book as Book).title} />
-      <BookForm categories={categories} book={book as Book} />
+      {/* key: remount when moving between books, otherwise React reuses the
+          form and its uncontrolled inputs keep the previous book's text. */}
+      <BookForm key={(book as Book).id} categories={categories} book={book as Book} />
     </div>
   );
 }

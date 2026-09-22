@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { slugify } from "@/lib/utils";
 
 export interface UploadResult {
   success: boolean;
@@ -10,8 +9,16 @@ export interface UploadResult {
 }
 
 const BUCKET = "book-covers";
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+
+/** Storage keys must be plain ASCII, so the extension comes from the MIME type. */
+const EXT_BY_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/avif": "avif",
+};
 
 /** Uploads a book cover to Supabase Storage and returns its public URL. Admin-only. */
 export async function uploadBookCover(formData: FormData): Promise<UploadResult> {
@@ -35,25 +42,26 @@ export async function uploadBookCover(formData: FormData): Promise<UploadResult>
     return { success: false, message: "Please choose an image." };
   }
   if (file.size > MAX_BYTES) {
-    return { success: false, message: "Image must be 5 MB or smaller." };
+    return { success: false, message: "Image must be 8 MB or smaller." };
   }
   if (!ALLOWED.includes(file.type)) {
     return { success: false, message: "Use a JPG, PNG, WebP, or AVIF image." };
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const base = slugify(file.name.replace(/\.[^.]+$/, "")) || "cover";
-  const path = `${base}-${Date.now()}.${ext}`;
+  // The object key is generated, never derived from the uploaded file's name:
+  // Supabase Storage rejects keys containing non-ASCII characters, so an
+  // Arabic file name (very common here) used to fail the upload outright.
+  const ext = EXT_BY_TYPE[file.type] ?? "jpg";
+  const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const path = `covers/${unique}.${ext}`;
 
   const { error } = await supabase.storage
     .from(BUCKET)
     .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
   if (error) {
-    return {
-      success: false,
-      message:
-        "Upload failed. Ensure the 'book-covers' storage bucket exists and is public.",
-    };
+    // Surface the real reason — hiding it behind a generic string made this
+    // impossible to diagnose from the outside.
+    return { success: false, message: `Upload failed: ${error.message}` };
   }
 
   const {

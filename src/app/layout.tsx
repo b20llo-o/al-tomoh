@@ -51,9 +51,17 @@ export default async function RootLayout({
       lang={locale}
       dir={dirOf(locale)}
       className={fontVariables}
+      // The store ships its own Arabic/English switcher. Browser auto-translate
+      // (Chrome/Edge/Brave) would rewrite the DOM underneath React — which
+      // silently reverts or wipes what an admin types into a form, and can
+      // "translate" English text back into Arabic. Opt the page out of it.
+      translate="no"
       suppressHydrationWarning
     >
-      <body className="flex min-h-screen flex-col font-sans">
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
+      <body className="flex min-h-screen flex-col font-sans notranslate">
         <ThemeProvider>
           <LocaleProvider initialLocale={locale}>
             <CurrencyProvider initialCurrency={initialCurrency} tryPerUsd={tryPerUsd}>

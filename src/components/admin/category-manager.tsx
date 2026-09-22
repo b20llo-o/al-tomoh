@@ -102,6 +102,9 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
           </button>
         ) : (
           <CategoryForm
+            // Remount when switching records: the inputs are uncontrolled, so
+            // without a key React keeps the previously edited category's text.
+            key={editing?.id ?? "new"}
             category={editing}
             onDone={() => setShowForm(false)}
             onCancel={() => setShowForm(false)}

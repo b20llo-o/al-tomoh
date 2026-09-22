@@ -7,6 +7,7 @@ import { saveBook, type AdminResult } from "@/app/actions/admin";
 import { uploadBookCover } from "@/app/actions/upload";
 import { useLocale } from "@/components/providers/locale-provider";
 import { BookCover } from "@/components/store/book-cover";
+import { compressImage } from "@/lib/compress-image";
 import type { Book, Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +50,7 @@ export function BookForm({
     setUploading(true);
     setUploadError(null);
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", await compressImage(file));
     const result = await uploadBookCover(fd);
     if (result.success && result.url) {
       setCoverUrl(result.url);
@@ -68,7 +69,7 @@ export function BookForm({
     const uploaded: string[] = [];
     for (const file of files) {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await compressImage(file));
       const result = await uploadBookCover(fd);
       if (result.success && result.url) {
         uploaded.push(result.url);
@@ -280,7 +281,12 @@ export function BookForm({
             </button>
           )}
           {uploadError && (
-            <p className="mt-2 text-xs text-red-600 dark:text-red-400">{uploadError}</p>
+            <p
+              role="alert"
+              className="mt-3 rounded-xl bg-red-500/10 px-3 py-2.5 text-sm font-medium leading-relaxed text-red-700 dark:text-red-400"
+            >
+              {uploadError}
+            </p>
           )}
 
           {/* Extra images — uploaded from the device, same as the cover. */}
